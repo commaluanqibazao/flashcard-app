@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 ITDD & IT Integration Flashcards</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 20px 0 10px;
+  }
+  .header h1 { font-size: 1.6rem; background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header p { color: #94a3b8; font-size: 0.85rem; margin-top: 4px; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 12px 0 16px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .stats-bar .stat { text-align: center; }
+  .stats-bar .num { font-size: 1.3rem; font-weight: 700; color: #38bdf8; display: block; }
+  .stats-bar .num.green { color: #4ade80; }
+  .stats-bar .num.red { color: #fb7185; }
+  .stats-bar .num.yellow { color: #fbbf24; }
+  .stats-bar .label { color: #64748b; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Progress bar */
+  .progress-wrap { background: rgba(255,255,255,0.06); border-radius: 8px; height: 8px; margin: 4px 0 16px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); border-radius: 8px; transition: width 0.4s ease; width: 0%; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    flex: 1;
+    min-width: 70px;
+    padding: 10px 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .controls button:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+  .controls button.active { background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #38bdf8; }
+
+  /* Category filter */
+  .category-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .category-bar button {
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #94a3b8;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .category-bar button:hover { background: rgba(255,255,255,0.08); }
+  .category-bar button.active { background: rgba(129,140,248,0.15); border-color: #818cf8; color: #818cf8; }
+
+  /* Card */
+  .card-container {
+    perspective: 1200px;
+    margin-bottom: 16px;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    min-height: 280px;
+    cursor: pointer;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    width: 100%;
+    min-height: 280px;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    padding: 30px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .card-front {
+    background: linear-gradient(145deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9));
+    backdrop-filter: blur(10px);
+  }
+  .card-front .word {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .card-front .example {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-style: italic;
+    text-align: center;
+    max-width: 90%;
+  }
+  .card-front .hint { color: #475569; font-size: 0.75rem; margin-top: 20px; }
+  .card-back {
+    background: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95));
+    transform: rotateY(180deg);
+    backdrop-filter: blur(10px);
+  }
+  .card-back .word { font-size: 1.5rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; }
+  .card-back .meaning {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .card-back .example {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+    max-width: 90%;
+    margin-bottom: 8px;
+  }
+  .card-back .category-tag {
+    font-size: 0.7rem;
+    color: #64748b;
+    background: rgba(255,255,255,0.05);
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .actions button {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .actions button:active { transform: scale(0.96); }
+  .btn-known { background: #4ade80; color: #052e16; }
+  .btn-known:hover { background: #22c55e; }
+  .btn-unknown { background: #fb7185; color: #450a0a; }
+  .btn-unknown:hover { background: #f43f5e; }
+  .btn-skip { background: rgba(255,255,255,0.06); color: #94a3b8; flex: 0.5; }
+  .btn-skip:hover { background: rgba(255,255,255,0.1); }
+
+  /* Progress text */
+  .progress-text { text-align: center; color: #64748b; font-size: 0.8rem; margin-bottom: 8px; }
+
+  /* Session summary overlay */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay.show { display: flex; }
+  .overlay-box {
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 36px;
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+  }
+  .overlay-box h2 { font-size: 1.5rem; margin-bottom: 16px; }
+  .overlay-box .big-num { font-size: 3rem; font-weight: 800; }
+  .overlay-box .big-num.green { color: #4ade80; }
+  .overlay-box .big-num.red { color: #fb7185; }
+  .overlay-box .row { display: flex; justify-content: space-around; margin: 16px 0; }
+  .overlay-box .row .item { text-align: center; }
+  .overlay-box .row .item .val { font-size: 1.5rem; font-weight: 700; }
+  .overlay-box button {
+    margin-top: 12px;
+    padding: 12px 36px;
+    border: none;
+    border-radius: 10px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .overlay-box button:hover { background: #7dd3fc; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
+  .empty-state .icon { font-size: 4rem; margin-bottom: 16px; }
+  .empty-state p { font-size: 1rem; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .card-front .word { font-size: 1.5rem; }
+    .card-back .meaning { font-size: 1.5rem; }
+    .card-face { min-height: 230px; padding: 24px 16px; }
+    .stats-bar { flex-wrap: wrap; gap: 6px; }
+    .controls button { font-size: 0.7rem; padding: 8px 4px; min-width: 55px; }
+  }
+
+  /* Flash animations */
+  @keyframes flashGreen { 0%{background:rgba(74,222,128,0.3)} 100%{background:transparent} }
+  @keyframes flashRed { 0%{background:rgba(251,113,133,0.3)} 100%{background:transparent} }
+  .flash-known { animation: flashGreen 0.4s ease; }
+  .flash-unknown { animation: flashRed 0.4s ease; }
+
+  /* Utility */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div class="header">
+    <h1>📚 ITDD & IT Integration Flashcards</h1>
+    <p>Tap card to flip · IT Due Diligence · M&A Integration · CET-6+</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat"><span class="num" id="statTotal">0</span><span class="label">Total</span></div>
+    <div class="stat"><span class="num green" id="statKnown">0</span><span class="label">Known ✅</span></div>
+    <div class="stat"><span class="num red" id="statUnknown">0</span><span class="label">Unknown ❌</span></div>
+    <div class="stat"><span class="num yellow" id="statPct">0%</span><span class="label">Mastered</span></div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- Mode controls -->
+  <div class="controls">
+    <button class="active" data-mode="all" onclick="setMode('all')">🔄 All Words</button>
+    <button data-mode="unknown" onclick="setMode('unknown')">❌ Unknown</button>
+    <button data-mode="known" onclick="setMode('known')">✅ Known</button>
+    <button onclick="resetProgress()">🔄 Reset</button>
+  </div>
+
+  <!-- Category filter -->
+  <div class="category-bar" id="categoryBar"></div>
+
+  <!-- Card area -->
+  <div id="cardArea">
+    <div class="progress-text" id="progressText">Card 0 of 0</div>
+    <div class="card-container" id="cardContainer">
+      <div class="card" id="card" onclick="flipCard()">
+        <div class="card-face card-front">
+          <div class="word" id="frontWord">Ready?</div>
+          <div class="example" id="frontExample"></div>
+          <div class="hint">👆 Tap to reveal answer</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="word" id="backWord">word</div>
+          <div class="meaning" id="backMeaning">meaning</div>
+          <div class="example" id="backExample"></div>
+          <div class="category-tag" id="backCategory">category</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions" id="actionButtons">
+      <button class="btn-known" onclick="markKnown()">✅ Known</button>
+      <button class="btn-unknown" onclick="markUnknown()">❌ Unknown</button>
+      <button class="btn-skip" onclick="skipCard()">⏭ Skip</button>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state hidden" id="emptyState">
+    <div class="icon">🎉</div>
+    <p id="emptyMsg">All words mastered!</p>
+  </div>
+
+  <!-- Session overlay -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-box">
+      <h2>📊 Session Done</h2>
+      <div class="row">
+        <div class="item"><div class="val green" id="sessKnown">0</div><div style="color:#4ade80;font-size:0.8rem;">Known ✅</div></div>
+        <div class="item"><div class="val red" id="sessUnknown">0</div><div style="color:#fb7185;font-size:0.8rem;">Unknown ❌</div></div>
+      </div>
+      <div style="margin:8px 0;color:#64748b;" id="sessTotal">0 cards reviewed</div>
+      <button onclick="closeOverlay()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// WORD DATA — 320 ITDD & IT Integration terms
+// ═══════════════════════════════════════════════
+
+const CATEGORIES = [
+  "IT Due Diligence Core",
+  "IT Integration Strategy",
+  "M&A Lifecycle & Process",
+  "Enterprise Architecture & Systems",
+  "Cloud Computing",
+  "Data Management",
+  "Security & Compliance",
+  "Networking & Infrastructure",
+  "Software & Systems Engineering",
+  "DevOps & CI/CD",
+  "Cybersecurity & Risk",
+  "Regulatory & Legal",
+  "IT Operations & Service Management",
+  "Strategy & Management Consulting",
+  "Financial & Commercial IT Terms",
+  "Advanced & Specialized",
+];
+
+const WORDS = [
+  //── IT Due Diligence Core ──
+  {en:"due diligence",zh:"尽职调查",ex:"The IT due diligence revealed significant technical debt.",cat:0},
+  {en:"acquisition",zh:"收购；并购",ex:"The acquisition target had outdated infrastructure.",cat:0},
+  {en:"divestiture",zh:"资产剥离；拆分",ex:"The divestiture required separating the IT systems.",cat:0},
+  {en:"disposition",zh:"处置；配置",ex:"Asset disposition must comply with data privacy laws.",cat:0},
+  {en:"depreciation",zh:"折旧；贬值",ex:"IT asset depreciation affects the valuation model.",cat:0},
+  {en:"amortization",zh:"摊销；分期偿还",ex:"Software capitalization requires amortization schedules.",cat:0},
+  {en:"liability",zh:"负债；责任",ex:"Contingent IT liabilities can derail a deal.",cat:0},
+  {en:"contingency",zh:"或有事项；应急方案",ex:"A contingency plan for data migration is critical.",cat:0},
+  {en:"indemnification",zh:"赔偿；补偿",ex:"The contract includes indemnification for data breaches.",cat:0},
+  {en:"escrow",zh:"第三方托管",ex:"Source code escrow protects the buyer post-acquisition.",cat:0},
+  {en:"warranty",zh:"保证；担保",ex:"Software warranty clauses must cover latent defects.",cat:0},
+  {en:"representation",zh:"陈述；声明",ex:"The seller's representations about IT assets were misleading.",cat:0},
+  {en:"covenant",zh:"契约；承诺",ex:"Transition service agreements contain restrictive covenants.",cat:0},
+  {en:"materiality",zh:"重要性；实质性",ex:"Materiality thresholds define which IT issues must be disclosed.",cat:0},
+  {en:"discrepancy",zh:"差异；不符",ex:"A discrepancy in software license counts was found.",cat:0},
+  {en:"remediation",zh:"补救；整改",ex:"Security remediation plans are a deliverable in the SPA.",cat:0},
+  {en:"mitigation",zh:"缓解；减轻",ex:"Risk mitigation strategies include insurance and escrow.",cat:0},
+  {en:"appraisal",zh:"评估；估价",ex:"IT asset appraisal impacts the purchase price allocation.",cat:0},
+  {en:"valuation",zh:"估值；定价",ex:"Technology valuation often uses the income approach.",cat:0},
+  {en:"assessment",zh:"评估；评定",ex:"A cybersecurity assessment is mandatory pre-close.",cat:0},
+
+  //── IT Integration Strategy ──
+  {en:"integration",zh:"整合；集成",ex:"Post-merger IT integration is the most complex workstream.",cat:1},
+  {en:"consolidation",zh:"整合；合并",ex:"Data center consolidation reduces operational costs.",cat:1},
+  {en:"synergy",zh:"协同效应",ex:"IT synergy targets are often overestimated in M&A.",cat:1},
+  {en:"harmonization",zh:"协调；统一",ex:"Policy harmonization across entities is a quick win.",cat:1},
+  {en:"rationalization",zh:"合理化；优化",ex:"Application portfolio rationalization eliminates redundancy.",cat:1},
+  {en:"standardization",zh:"标准化",ex:"Standardization of the tech stack accelerates integration.",cat:1},
+  {en:"orchestration",zh:"编排；协调",ex:"Integration orchestration tools automate data workflows.",cat:1},
+  {en:"assimilation",zh:"同化；吸收",ex:"Cultural assimilation is often harder than technical integration.",cat:1},
+  {en:"alignment",zh:"对齐；协同",ex:"IT alignment with business strategy is a due diligence focus.",cat:1},
+  {en:"convergence",zh:"融合；趋同",ex:"The convergence of IT and OT systems creates new risks.",cat:1},
+  {en:"divergence",zh:"分歧；差异",ex:"Process divergence between legacy systems complicates data mapping.",cat:1},
+  {en:"interoperability",zh:"互操作性",ex:"Interoperability between ERP systems is a key integration challenge.",cat:1},
+  {en:"portability",zh:"可移植性",ex:"Cloud workload portability enables multi-cloud strategies.",cat:1},
+  {en:"compatibility",zh:"兼容性",ex:"Backward compatibility affects the upgrade timeline.",cat:1},
+  {en:"scalability",zh:"可扩展性",ex:"Scalability assessment determines if infrastructure can handle growth.",cat:1},
+  {en:"elasticity",zh:"弹性；伸缩性",ex:"Cloud elasticity allows dynamic resource allocation.",cat:1},
+  {en:"redundancy",zh:"冗余；备份",ex:"Geographic redundancy ensures business continuity.",cat:1},
+  {en:"resilience",zh:"韧性；恢复力",ex:"System resilience is measured by RTO and RPO metrics.",cat:1},
+  {en:"robustness",zh:"健壮性；鲁棒性",ex:"The architecture robustness was validated through stress testing.",cat:1},
+  {en:"modularity",zh:"模块化",ex:"Modularity simplifies the separation of divested systems.",cat:1},
+
+  //── M&A Lifecycle & Process ──
+  {en:"mandate",zh:"授权；委托",ex:"The IT team received a mandate to complete integration within 12 months.",cat:2},
+  {en:"stakeholder",zh:"利益相关者",ex:"Stakeholder buy-in is critical for integration success.",cat:2},
+  {en:"governance",zh:"治理；管理",ex:"A joint integration governance board oversees decision-making.",cat:2},
+  {en:"oversight",zh:"监督；监管",ex:"Program oversight ensures integration milestones are met.",cat:2},
+  {en:"deliverable",zh:"可交付成果",ex:"The Day 1 deliverable checklist includes 47 items.",cat:2},
+  {en:"milestone",zh:"里程碑",ex:"Integration milestones are tracked in the PMO dashboard.",cat:2},
+  {en:"gate",zh:"关卡；审批节点",ex:"Phase gates require sign-off before proceeding to the next stage.",cat:2},
+  {en:"escalation",zh:"升级；上报",ex:"Severity-1 incidents require immediate escalation to the steering committee.",cat:2},
+  {en:"triage",zh:"分类；分诊",ex:"Integration issues are triaged by the joint operations team.",cat:2},
+  {en:"reconciliation",zh:"对账；调节",ex:"License reconciliation reveals over-deployment gaps.",cat:2},
+  {en:"migration",zh:"迁移；转移",ex:"Data migration is the highest-risk integration workstream.",cat:2},
+  {en:"transition",zh:"过渡；转型",ex:"The transition service agreement defines support duration.",cat:2},
+  {en:"transformation",zh:"转型；变革",ex:"Digital transformation initiatives often accelerate post-merger.",cat:2},
+  {en:"dispositioning",zh:"处置；安排",ex:"Surplus hardware dispositioning must follow environmental regulations.",cat:2},
+  {en:"segregation",zh:"隔离；分离",ex:"System segregation is required for regulatory compliance.",cat:2},
+  {en:"carve-out",zh:"剥离；分拆",ex:"A carve-out requires building standalone infrastructure.",cat:2},
+  {en:"day-one readiness",zh:"首日就绪",ex:"Day-one readiness validates that critical systems are operational at close.",cat:2},
+  {en:"cutover",zh:"切换；转换",ex:"The cutover window is limited to 48 hours over the weekend.",cat:2},
+  {en:"rollback",zh:"回滚；撤销",ex:"A rollback plan must be tested before any production migration.",cat:2},
+  {en:"runbook",zh:"操作手册；流程文档",ex:"The integration runbook contains step-by-step procedures for Day 1.",cat:2},
+
+  //── Enterprise Architecture & Systems ──
+  {en:"architecture",zh:"架构；体系结构",ex:"Enterprise architecture establishes principles for system design.",cat:3},
+  {en:"infrastructure",zh:"基础设施",ex:"Infrastructure due diligence covers network, storage, and compute.",cat:3},
+  {en:"ecosystem",zh:"生态系统",ex:"The legacy ecosystem consists of over 200 interconnected applications.",cat:3},
+  {en:"middleware",zh:"中间件",ex:"Middleware abstraction layers simplify integration between disparate systems.",cat:3},
+  {en:"legacy system",zh:"遗留系统",ex:"Legacy system decommissioning is a major cost synergy driver.",cat:3},
+  {en:"monolith",zh:"单体架构",ex:"Monolith-to-microservices migration is a multi-year transformation.",cat:3},
+  {en:"microservices",zh:"微服务",ex:"Microservices architecture enables independent deployability.",cat:3},
+  {en:"containerization",zh:"容器化",ex:"Containerization improves workload portability across environments.",cat:3},
+  {en:"orchestrator",zh:"编排器",ex:"Kubernetes is the dominant container orchestrator in enterprise IT.",cat:3},
+  {en:"virtualization",zh:"虚拟化",ex:"Server virtualization consolidation improves hardware utilization.",cat:3},
+  {en:"hypervisor",zh:"虚拟机监控器",ex:"The hypervisor layer abstracts hardware from guest operating systems.",cat:3},
+  {en:"bare-metal",zh:"裸机；物理机",ex:"Bare-metal performance is required for latency-sensitive workloads.",cat:3},
+  {en:"cluster",zh:"集群",ex:"The cluster configuration ensures high availability for critical services.",cat:3},
+  {en:"federation",zh:"联邦；联合",ex:"Identity federation enables single sign-on across merged entities.",cat:3},
+  {en:"mesh",zh:"网状；网格",ex:"Service mesh provides observability and traffic management.",cat:3},
+  {en:"topology",zh:"拓扑；布局",ex:"Network topology diagrams are essential for infrastructure assessment.",cat:3},
+  {en:"discovery",zh:"发现；探测",ex:"Discovery tools inventory all connected assets in the environment.",cat:3},
+  {en:"dependency",zh:"依赖关系",ex:"Application dependency mapping reveals hidden integration points.",cat:3},
+  {en:"catalogue",zh:"目录；清单",ex:"The service catalogue documents all IT offerings and their owners.",cat:3},
+  {en:"repository",zh:"存储库；仓库",ex:"Source code repository migration is often underestimated.",cat:3},
+
+  //── Cloud Computing ──
+  {en:"hybrid cloud",zh:"混合云",ex:"Hybrid cloud strategies balance on-premise control with cloud agility.",cat:4},
+  {en:"multi-cloud",zh:"多云",ex:"Multi-cloud deployments avoid vendor lock-in but increase complexity.",cat:4},
+  {en:"tenancy",zh:"租用；租户",ex:"Multi-tenancy architecture serves multiple clients from shared infrastructure.",cat:4},
+  {en:"provisioning",zh:"配置；部署",ex:"Automated provisioning reduces infrastructure setup time.",cat:4},
+  {en:"abstraction",zh:"抽象化",ex:"Abstraction layers decouple applications from underlying infrastructure.",cat:4},
+  {en:"instance",zh:"实例",ex:"Reserved instances reduce cloud costs by up to 60%.",cat:4},
+  {en:"sizing",zh:"规格确定",ex:"Proper sizing optimizes cost without sacrificing performance.",cat:4},
+  {en:"consumption",zh:"消费；用量",ex:"Cloud consumption models shift CAPEX to OPEX.",cat:4},
+  {en:"on-premise",zh:"本地部署",ex:"On-premise to cloud migration is a core integration workstream.",cat:4},
+  {en:"co-location",zh:"托管；共置",ex:"Co-location facilities provide physical security and connectivity.",cat:4},
+  {en:"edge computing",zh:"边缘计算",ex:"Edge computing reduces latency for IoT workloads.",cat:4},
+  {en:"serverless",zh:"无服务器",ex:"Serverless architectures abstract infrastructure management entirely.",cat:4},
+  {en:"region",zh:"区域；地区",ex:"Data residency requirements dictate which cloud regions are permissible.",cat:4},
+  {en:"availability zone",zh:"可用区",ex:"Availability zones provide fault isolation within a region.",cat:4},
+  {en:"disaster recovery",zh:"灾难恢复",ex:"Disaster recovery planning must account for cross-region replication.",cat:4},
+  {en:"service-level agreement",zh:"服务水平协议",ex:"SLA commitments define uptime guarantees and penalty structures.",cat:4},
+  {en:"capacity planning",zh:"容量规划",ex:"Capacity planning ensures infrastructure meets future demand.",cat:4},
+  {en:"chargeback",zh:"成本分摊；回充",ex:"Chargeback models allocate cloud costs to business units.",cat:4},
+  {en:"elasticity",zh:"弹性伸缩",ex:"Auto-scaling policies ensure elasticity during demand spikes.",cat:4},
+  {en:"sizing",zh:"规格调整",ex:"Right-sizing optimizes cloud resource allocation.",cat:4},
+
+  //── Data Management ──
+  {en:"data governance",zh:"数据治理",ex:"Data governance frameworks define ownership, quality, and lineage.",cat:5},
+  {en:"stewardship",zh:"管理职责",ex:"Data stewardship assigns accountability for data quality.",cat:5},
+  {en:"lineage",zh:"血缘；溯源",ex:"Data lineage tracking helps with regulatory compliance.",cat:5},
+  {en:"provenance",zh:"来源；出处",ex:"Provenance metadata records the origin and transformation of data.",cat:5},
+  {en:"fidelity",zh:"保真度；精确性",ex:"Data fidelity during migration must be validated through reconciliation.",cat:5},
+  {en:"integrity",zh:"完整性；一致性",ex:"Referential integrity constraints prevent orphaned records.",cat:5},
+  {en:"deduplication",zh:"去重",ex:"Data deduplication reduces storage footprint and migration volume.",cat:5},
+  {en:"normalization",zh:"归一化；规范化",ex:"Data normalization resolves format discrepancies across sources.",cat:5},
+  {en:"canonical",zh:"规范的；标准的",ex:"A canonical data model simplifies integration between systems.",cat:5},
+  {en:"schema",zh:"模式；架构",ex:"Schema mapping is the most time-consuming integration activity.",cat:5},
+  {en:"extraction",zh:"提取",ex:"ETL processes handle extraction from hundreds of source systems.",cat:5},
+  {en:"transformation",zh:"转换",ex:"Data transformation rules must be documented and tested.",cat:5},
+  {en:"loading",zh:"加载",ex:"Bulk loading performance impacts the migration timeline.",cat:5},
+  {en:"warehouse",zh:"数据仓库",ex:"Enterprise data warehouse consolidation is a major synergy initiative.",cat:5},
+  {en:"data lake",zh:"数据湖",ex:"A data lake architecture accommodates structured and unstructured data.",cat:5},
+  {en:"marshaling",zh:"编排；序列化",ex:"Data marshaling converts objects for network transmission.",cat:5},
+  {en:"synchronization",zh:"同步",ex:"Real-time synchronization is required between merged CRM platforms.",cat:5},
+  {en:"replication",zh:"复制",ex:"Database replication ensures data availability during cutover.",cat:5},
+  {en:"archival",zh:"归档",ex:"Data archival policies balance retention requirements with storage costs.",cat:5},
+  {en:"purge",zh:"清除；销毁",ex:"Secure data purge processes are required before system decommissioning.",cat:5},
+
+  //── Security & Compliance ──
+  {en:"encryption",zh:"加密",ex:"End-to-end encryption protects data in transit and at rest.",cat:6},
+  {en:"cipher",zh:"密码；加密算法",ex:"Weak cipher suites must be deprecated during security hardening.",cat:6},
+  {en:"authentication",zh:"身份验证",ex:"Multi-factor authentication is a mandatory security control.",cat:6},
+  {en:"authorization",zh:"授权；权限",ex:"Role-based authorization restricts access to sensitive systems.",cat:6},
+  {en:"entitlement",zh:"权限；权利",ex:"Entitlement reviews ensure access is aligned with current roles.",cat:6},
+  {en:"attestation",zh:"认证；证明",ex:"SOC2 attestation is a common due diligence requirement.",cat:6},
+  {en:"certification",zh:"认证；证书",ex:"SSL certificate inventory is often overlooked in ITDD.",cat:6},
+  {en:"penetration",zh:"渗透",ex:"Penetration testing reveals exploitable vulnerabilities.",cat:6},
+  {en:"vulnerability",zh:"漏洞；脆弱性",ex:"Vulnerability management programs prioritize remediation based on CVSS scores.",cat:6},
+  {en:"exploit",zh:"利用；漏洞利用",ex:"Zero-day exploits pose significant risk to merged networks.",cat:6},
+  {en:"breach",zh:"违规；泄露",ex:"A historical data breach must be disclosed during due diligence.",cat:6},
+  {en:"incident",zh:"事件；安全事故",ex:"Incident response playbooks must be harmonized post-merger.",cat:6},
+  {en:"forensic",zh:"法医的；取证",ex:"Digital forensic analysis is required for breach investigation.",cat:6},
+  {en:"audit trail",zh:"审计轨迹",ex:"An immutable audit trail satisfies regulatory record-keeping requirements.",cat:6},
+  {en:"segregation of duties",zh:"职责分离",ex:"Segregation of duties prevents insider fraud in financial systems.",cat:6},
+  {en:"privilege",zh:"权限；特权",ex:"Least-privilege principles limit lateral movement in case of compromise.",cat:6},
+  {en:"compliance",zh:"合规；遵循",ex:"Regulatory compliance spans GDPR, SOX, HIPAA, and PCI-DSS.",cat:6},
+  {en:"jurisdiction",zh:"管辖范围；司法权",ex:"Data jurisdiction determines which legal frameworks apply.",cat:6},
+  {en:"sovereignty",zh:"主权；自主权",ex:"Data sovereignty laws restrict cross-border data transfers.",cat:6},
+  {en:"sanction",zh:"制裁；处罚",ex:"Non-compliance with export controls can result in severe sanctions.",cat:6},
+
+  //── Networking & Infrastructure ──
+  {en:"latency",zh:"延迟",ex:"Network latency between merged offices affects application performance.",cat:7},
+  {en:"throughput",zh:"吞吐量",ex:"Throughput capacity must be assessed for video conferencing workloads.",cat:7},
+  {en:"subnet",zh:"子网",ex:"Subnet conflicts between merging entities require IP re-addressing.",cat:7},
+  {en:"gateway",zh:"网关",ex:"API gateway consolidation simplifies the integration architecture.",cat:7},
+  {en:"proxy",zh:"代理服务器",ex:"Reverse proxy configuration must be updated during network integration.",cat:7},
+  {en:"firewall",zh:"防火墙",ex:"Firewall rule consolidation reduces the attack surface area.",cat:7},
+  {en:"load balancer",zh:"负载均衡器",ex:"Load balancer configuration ensures even traffic distribution.",cat:7},
+  {en:"peering",zh:"对等连接",ex:"Direct peering between cloud VPCs reduces data transfer costs.",cat:7},
+  {en:"tunneling",zh:"隧道技术",ex:"VPN tunneling provides encrypted connectivity during transitional phases.",cat:7},
+  {en:"backbone",zh:"骨干网",ex:"The network backbone must support double the combined traffic.",cat:7},
+  {en:"segmentation",zh:"分段；隔离",ex:"Network segmentation limits blast radius in security incidents.",cat:7},
+  {en:"demilitarized zone",zh:"隔离区(DMZ)",ex:"DMZ architecture exposes public-facing services while protecting internal networks.",cat:7},
+  {en:"anycast",zh:"任播",ex:"Anycast routing improves DNS resolution performance globally.",cat:7},
+  {en:"multicast",zh:"组播",ex:"Multicast traffic management is critical for financial trading systems.",cat:7},
+  {en:"jitter",zh:"抖动",ex:"Jitter buffers compensate for variable packet arrival times.",cat:7},
+  {en:"bandwidth",zh:"带宽",ex:"Bandwidth provisioning must account for data replication traffic.",cat:7},
+  {en:"contention",zh:"争用；竞争",ex:"Network contention affects application performance during peak usage.",cat:7},
+  {en:"observability",zh:"可观测性",ex:"Observability platforms consolidate logs, metrics, and traces.",cat:7},
+  {en:"telemetry",zh:"遥测",ex:"Infrastructure telemetry feeds the central monitoring system.",cat:7},
+  {en:"saturation",zh:"饱和",ex:"Port saturation indicates insufficient network capacity.",cat:7},
+
+  //── Software & Systems Engineering ──
+  {en:"lifecycle",zh:"生命周期",ex:"Software development lifecycle methodology affects delivery velocity.",cat:8},
+  {en:"deployment",zh:"部署",ex:"Continuous deployment pipelines accelerate time-to-market.",cat:8},
+  {en:"provisioning",zh:"资源调配",ex:"Infrastructure provisioning is fully automated via Terraform.",cat:8},
+  {en:"configuration",zh:"配置",ex:"Configuration drift between environments causes deployment failures.",cat:8},
+  {en:"refactoring",zh:"重构",ex:"Legacy code refactoring is necessary before system integration.",cat:8},
+  {en:"deprecation",zh:"弃用",ex:"API deprecation timelines must be communicated to all consumers.",cat:8},
+  {en:"decommissioning",zh:"退役；停用",ex:"System decommissioning includes secure data disposal.",cat:8},
+  {en:"migration path",zh:"迁移路径",ex:"A phased migration path minimizes business disruption.",cat:8},
+  {en:"parallel run",zh:"并行运行",ex:"A parallel run validates system behavior before the final cutover.",cat:8},
+  {en:"fallback",zh:"回退；备用",ex:"The fallback procedure restores the previous state within four hours.",cat:8},
+  {en:"rollforward",zh:"前滚",ex:"Transaction log rollforward recovers data to the point of failure.",cat:8},
+  {en:"validation",zh:"验证",ex:"Post-migration validation confirms data completeness.",cat:8},
+  {en:"verification",zh:"核实；检验",ex:"Independent verification ensures integration meets requirements.",cat:8},
+  {en:"acceptance",zh:"验收",ex:"User acceptance testing is the final gate before go-live.",cat:8},
+  {en:"conformance",zh:"符合性；一致性",ex:"Standards conformance ensures interoperability across the ecosystem.",cat:8},
+  {en:"maturity",zh:"成熟度",ex:"CMMI maturity level influences process reliability assessment.",cat:8},
+  {en:"capability",zh:"能力；功能",ex:"IT capability maturity is a key dimension of due diligence.",cat:8},
+  {en:"roadmap",zh:"路线图",ex:"The integration roadmap spans twelve quarters post-close.",cat:8},
+  {en:"technical debt",zh:"技术债务",ex:"Technical debt assessment is a critical due diligence deliverable.",cat:8},
+  {en:"technical debt ratio",zh:"技术债务比率",ex:"A technical debt ratio above 20% indicates significant remediation needs.",cat:8},
+
+  //── DevOps & CI/CD ──
+  {en:"continuous integration",zh:"持续集成",ex:"Continuous integration detects merge conflicts early.",cat:9},
+  {en:"continuous delivery",zh:"持续交付",ex:"Continuous delivery automates the release pipeline.",cat:9},
+  {en:"pipeline",zh:"流水线",ex:"CI/CD pipeline consolidation accelerates software delivery.",cat:9},
+  {en:"artifact",zh:"构建产物",ex:"Artifact repository migration is often underestimated.",cat:9},
+  {en:"registry",zh:"注册表；仓库",ex:"Container image registries must be federated post-merger.",cat:9},
+  {en:"blue-green",zh:"蓝绿部署",ex:"Blue-green deployment minimizes downtime during releases.",cat:9},
+  {en:"canary",zh:"金丝雀发布",ex:"Canary releases limit blast radius of defective deployments.",cat:9},
+  {en:"immutable",zh:"不可变的",ex:"Immutable infrastructure eliminates configuration drift.",cat:9},
+  {en:"idempotent",zh:"幂等的",ex:"Idempotent deployment scripts ensure consistent results.",cat:9},
+  {en:"idempotency",zh:"幂等性",ex:"Idempotency is a fundamental principle of infrastructure automation.",cat:9},
+  {en:"instrumentation",zh:"探针；工具化",ex:"Application instrumentation provides granular performance data.",cat:9},
+  {en:"tracing",zh:"链路追踪",ex:"Distributed tracing identifies bottlenecks across microservices.",cat:9},
+  {en:"profiling",zh:"性能分析",ex:"CPU profiling reveals performance hotspots in the codebase.",cat:9},
+  {en:"benchmarking",zh:"基准测试",ex:"Performance benchmarking establishes baseline metrics for comparison.",cat:9},
+  {en:"tail latency",zh:"尾部延迟",ex:"Tail latency optimization is critical for real-time systems.",cat:9},
+  {en:"chaos engineering",zh:"混沌工程",ex:"Chaos engineering validates system resilience under failure conditions.",cat:9},
+  {en:"site reliability",zh:"站点可靠性",ex:"Site reliability engineering adopts software approaches to operations.",cat:9},
+  {en:"error budget",zh:"错误预算",ex:"Error budget policies balance reliability against feature velocity.",cat:9},
+  {en:"post-mortem",zh:"事后剖析",ex:"Post-mortem reports drive continuous improvement in IT operations.",cat:9},
+  {en:"service-level objective",zh:"服务等级目标",ex:"SLOs define measurable targets for system reliability.",cat:9},
+
+  //── Cybersecurity & Risk ──
+  {en:"cybersecurity",zh:"网络安全",ex:"Cybersecurity due diligence assesses the target's security posture.",cat:10},
+  {en:"threat",zh:"威胁",ex:"Advanced persistent threats require continuous monitoring.",cat:10},
+  {en:"exploitability",zh:"可利用性",ex:"Exploitability scores drive remediation prioritization.",cat:10},
+  {en:"exfiltration",zh:"数据泄露(外传)",ex:"Data exfiltration prevention requires network egress monitoring.",cat:10},
+  {en:"ransomware",zh:"勒索软件",ex:"Ransomware resilience is a key due diligence consideration.",cat:10},
+  {en:"phishing",zh:"钓鱼攻击",ex:"Phishing simulation results indicate security awareness levels.",cat:10},
+  {en:"spoofing",zh:"欺骗；伪造",ex:"Email spoofing protections include SPF, DKIM, and DMARC.",cat:10},
+  {en:"impersonation",zh:"冒充；仿冒",ex:"Executive impersonation attacks target finance departments.",cat:10},
+  {en:"social engineering",zh:"社会工程学",ex:"Social engineering tests reveal procedural vulnerabilities.",cat:10},
+  {en:"reconnaissance",zh:"侦察",ex:"Network reconnaissance is often the first phase of an attack.",cat:10},
+  {en:"lateral movement",zh:"横向移动",ex:"Network segmentation limits lateral movement post-breach.",cat:10},
+  {en:"persistence",zh:"持久化",ex:"Attackers establish persistence through scheduled tasks or backdoors.",cat:10},
+  {en:"privilege escalation",zh:"权限提升",ex:"Privilege escalation vulnerabilities must be patched urgently.",cat:10},
+  {en:"hardening",zh:"加固；强化",ex:"System hardening checklists are part of integration security activities.",cat:10},
+  {en:"patching",zh:"补丁管理",ex:"Patch management maturity indicates operational discipline.",cat:10},
+  {en:"zero trust",zh:"零信任",ex:"Zero trust architecture assumes breach and verifies every request.",cat:10},
+  {en:"defense-in-depth",zh:"纵深防御",ex:"Defense-in-depth strategies layer preventive, detective, and corrective controls.",cat:10},
+  {en:"compensating control",zh:"补偿性控制",ex:"Compensating controls mitigate risk when primary controls are infeasible.",cat:10},
+  {en:"residual risk",zh:"残余风险",ex:"Residual risk is accepted only when within the defined appetite.",cat:10},
+  {en:"threat intelligence",zh:"威胁情报",ex:"Threat intelligence feeds inform proactive defense measures.",cat:10},
+
+  //── Regulatory & Legal ──
+  {en:"regulatory",zh:"监管的",ex:"Regulatory filings must disclose material IT risks.",cat:11},
+  {en:"statutory",zh:"法定的",ex:"Statutory data retention periods vary by jurisdiction.",cat:11},
+  {en:"fiduciary",zh:"信义；受托的",ex:"Directors have fiduciary duties to oversee cybersecurity risks.",cat:11},
+  {en:"disclosure",zh:"披露；公开",ex:"Material cybersecurity disclosures are required in SEC filings.",cat:11},
+  {en:"promulgation",zh:"颁布；发布",ex:"Policy promulgation ensures all employees are aware of new standards.",cat:11},
+  {en:"adjudication",zh:"裁决；判定",ex:"Dispute adjudication clauses define arbitration for IT service disagreements.",cat:11},
+  {en:"arbitration",zh:"仲裁",ex:"IT service disputes are subject to binding arbitration.",cat:11},
+  {en:"litigation",zh:"诉讼",ex:"IP litigation risks must be assessed during due diligence.",cat:11},
+  {en:"indemnity",zh:"赔偿(条款)",ex:"Data breach indemnity clauses are heavily negotiated in IT contracts.",cat:11},
+  {en:"exposure",zh:"风险敞口",ex:"IT risk exposure includes cybersecurity, compliance, and operational dimensions.",cat:11},
+  {en:"provision",zh:"条款；准备金",ex:"Contract provisions for software maintenance must be reviewed.",cat:11},
+  {en:"stipulation",zh:"规定；约定",ex:"Transition service agreements include stipulations on service levels.",cat:11},
+  {en:"accrual",zh:"应计；累积",ex:"IT project accruals affect the net working capital adjustment.",cat:11},
+  {en:"capitalization",zh:"资本化",ex:"Software development costs eligible for capitalization follow ASC 350-40.",cat:11},
+  {en:"impairment",zh:"减值",ex:"Goodwill impairment can result from overpaying for IT capabilities.",cat:11},
+  {en:"contingent consideration",zh:"或有对价",ex:"Earn-out structures link contingent consideration to IT integration milestones.",cat:11},
+  {en:"earn-out",zh:"盈利能力支付计划",ex:"IT integration delays can trigger earn-out disputes.",cat:11},
+  {en:"escrow release",zh:"第三方托管释放",ex:"Escrow release conditions are tied to IT integration completion certificates.",cat:11},
+  {en:"data residency",zh:"数据驻留",ex:"Data residency regulations require customer data to remain within national borders.",cat:11},
+  {en:"privacy",zh:"隐私",ex:"Privacy impact assessments are mandatory for new data processing systems.",cat:11},
+
+  //── IT Operations & Service Management ──
+  {en:"incident management",zh:"事件管理",ex:"Incident management processes must be unified within 90 days.",cat:12},
+  {en:"problem management",zh:"问题管理",ex:"Root cause analysis is the core of problem management.",cat:12},
+  {en:"change management",zh:"变更管理",ex:"Change advisory board approval is required for production changes.",cat:12},
+  {en:"release management",zh:"发布管理",ex:"Release management coordinates deployment across multiple systems.",cat:12},
+  {en:"configuration management",zh:"配置管理",ex:"Configuration management database consolidation is a foundational activity.",cat:12},
+  {en:"asset management",zh:"资产管理",ex:"IT asset management tracks hardware and software throughout the lifecycle.",cat:12},
+  {en:"capacity management",zh:"容量管理",ex:"Capacity management ensures resources meet future demand.",cat:12},
+  {en:"availability management",zh:"可用性管理",ex:"Availability management targets 99.99% uptime for critical systems.",cat:12},
+  {en:"continuity management",zh:"连续性管理",ex:"Business continuity management includes IT disaster recovery plans.",cat:12},
+  {en:"service catalog",zh:"服务目录",ex:"The service catalog must be harmonized across merged entities.",cat:12},
+  {en:"service desk",zh:"服务台",ex:"Service desk consolidation reduces operational overhead.",cat:12},
+  {en:"fulfillment",zh:"履行；交付",ex:"Service request fulfillment automation improves efficiency.",cat:12},
+  {en:"SLA breach",zh:"服务协议违约",ex:"SLA breach penalties are calculated based on downtime duration.",cat:12},
+  {en:"KPI",zh:"关键绩效指标",ex:"IT KPIs track integration progress against the business case.",cat:12},
+  {en:"dashboard",zh:"仪表盘",ex:"The integration dashboard provides real-time status of all workstreams.",cat:12},
+  {en:"playbook",zh:"行动手册",ex:"The integration playbook documents standard operating procedures.",cat:12},
+  {en:"RACI",zh:"责任分配矩阵",ex:"RACI matrix clarifies decision rights for integration activities.",cat:12},
+  {en:"runbook",zh:"操作手册",ex:"Operations runbooks document standard incident response procedures.",cat:12},
+  {en:"war room",zh:"作战室",ex:"The integration war room meets daily during the first 100 days.",cat:12},
+  {en:"service-level agreement",zh:"服务水平协议",ex:"SLA harmonization between merging entities is a Day-1 priority.",cat:12},
+
+  //── Strategy & Management Consulting ──
+  {en:"synergy capture",zh:"协同效应实现",ex:"Synergy capture tracking ensures integration delivers projected value.",cat:13},
+  {en:"value realization",zh:"价值实现",ex:"Value realization milestones are tied to executive compensation.",cat:13},
+  {en:"business case",zh:"商业论证",ex:"The IT business case must demonstrate ROI within three years.",cat:13},
+  {en:"target operating model",zh:"目标运营模式",ex:"The target operating model defines the future-state IT organization.",cat:13},
+  {en:"operating model",zh:"运营模式",ex:"IT operating model design spans people, process, and technology.",cat:13},
+  {en:"organizational design",zh:"组织设计",ex:"Organizational design determines reporting lines and spans of control.",cat:13},
+  {en:"span of control",zh:"管理幅度",ex:"A lean IT organization typically has a span of control of 7 to 10.",cat:13},
+  {en:"center of excellence",zh:"卓越中心",ex:"A Cloud CoE establishes best practices and governance frameworks.",cat:13},
+  {en:"shared services",zh:"共享服务中心",ex:"IT shared services consolidation eliminates duplicate functions.",cat:13},
+  {en:"insourcing",zh:"内部化；内包",ex:"Insourcing previously outsourced IT functions may increase control.",cat:13},
+  {en:"outsourcing",zh:"外包",ex:"IT outsourcing contracts require due diligence on vendor stability.",cat:13},
+  {en:"co-sourcing",zh:"合作外包",ex:"Co-sourcing arrangements blend internal and external teams.",cat:13},
+  {en:"offshoring",zh:"离岸外包",ex:"Offshoring labor arbitrage must be balanced with communication overhead.",cat:13},
+  {en:"nearshoring",zh:"近岸外包",ex:"Nearshoring reduces time zone differences compared to traditional offshoring.",cat:13},
+  {en:"subcontractor",zh:"分包商",ex:"Subcontractor risk flows through the prime vendor relationship.",cat:13},
+  {en:"prime vendor",zh:"主供应商",ex:"Prime vendor consolidation simplifies procurement and reduces costs.",cat:13},
+  {en:"retainer",zh:"顾问聘用金",ex:"IT advisory retainers provide access to specialized expertise.",cat:13},
+  {en:"statement of work",zh:"工作说明书",ex:"SOW scope creep is a common source of integration cost overruns.",cat:13},
+  {en:"workstream",zh:"工作流；工作包",ex:"The integration program comprises twelve parallel workstreams.",cat:13},
+  {en:"work package",zh:"工作包",ex:"Each work package has defined deliverables, budget, and owner.",cat:13},
+
+  //── Financial & Commercial IT Terms ──
+  {en:"capital expenditure",zh:"资本支出(CAPEX)",ex:"IT CAPEX budgets cover hardware, software, and infrastructure.",cat:14},
+  {en:"operational expenditure",zh:"运营支出(OPEX)",ex:"Cloud migration shifts IT costs from CAPEX to OPEX.",cat:14},
+  {en:"total cost of ownership",zh:"总拥有成本",ex:"TCO analysis compares on-premise versus cloud deployment costs.",cat:14},
+  {en:"return on investment",zh:"投资回报率",ex:"IT integration ROI is measured against synergy targets.",cat:14},
+  {en:"net present value",zh:"净现值",ex:"NPV calculations discount projected IT synergy cash flows.",cat:14},
+  {en:"internal rate of return",zh:"内部收益率",ex:"IRR thresholds determine which integration projects are approved.",cat:14},
+  {en:"payback period",zh:"回收期",ex:"The integration investment has a targeted payback period of 18 months.",cat:14},
+  {en:"run-rate",zh:"年化运行率",ex:"IT run-rate cost analysis informs the synergy baseline.",cat:14},
+  {en:"baseline",zh:"基线；基准",ex:"IT cost baseline must be established before measuring synergies.",cat:14},
+  {en:"benchmark",zh:"基准参照",ex:"IT spending benchmarks compare cost against industry peers.",cat:14},
+  {en:"cost avoidance",zh:"成本规避",ex:"Consolidation-driven cost avoidance is softer than direct cost reduction.",cat:14},
+  {en:"cost reduction",zh:"成本削减",ex:"Headcount reduction is the largest IT cost reduction lever.",cat:14},
+  {en:"overhead",zh:"间接费用",ex:"IT overhead allocation methodologies impact business unit profitability.",cat:14},
+  {en:"allocation",zh:"分摊；分配",ex:"IT cost allocation models must be agreed upon early.",cat:14},
+  {en:"procurement",zh:"采购",ex:"IT procurement consolidation leverages vendor volume discounts.",cat:14},
+  {en:"sourcing",zh:"寻源；采购策略",ex:"Strategic sourcing evaluates vendor alternatives for major IT categories.",cat:14},
+  {en:"negotiation",zh:"谈判；协商",ex:"Vendor contract renegotiation achieves 15-20% cost savings.",cat:14},
+  {en:"leverage",zh:"杠杆；优势",ex:"Combined purchasing leverage improves vendor pricing terms.",cat:14},
+  {en:"discount",zh:"折扣；折让",ex:"Enterprise license agreement discounts depend on commitment volume.",cat:14},
+  {en:"true-up",zh:"调整；补足",ex:"Annual license true-up reconciles deployed versus purchased quantities.",cat:14},
+
+  //── Advanced & Specialized ──
+  {en:"as-is",zh:"现状(as-is)",ex:"The as-is assessment documents all current systems and processes.",cat:15},
+  {en:"to-be",zh:"目标状态(to-be)",ex:"The to-be architecture defines the target integration state.",cat:15},
+  {en:"disparate",zh:"不同的；异质的",ex:"Disparate legacy systems must be integrated into a unified platform.",cat:15},
+  {en:"heterogeneous",zh:"异构的",ex:"Heterogeneous environments increase integration complexity.",cat:15},
+  {en:"homogeneous",zh:"同构的",ex:"A homogeneous tech stack simplifies maintenance and reduces costs.",cat:15},
+  {en:"bespoke",zh:"定制的；专属的",ex:"Bespoke applications require specialized knowledge to maintain.",cat:15},
+  {en:"off-the-shelf",zh:"现成的；成品",ex:"Off-the-shelf software is preferred over custom development.",cat:15},
+  {en:"greenfield",zh:"全新建设；绿地",ex:"A greenfield implementation avoids legacy constraints.",cat:15},
+  {en:"brownfield",zh:"已有环境改造；棕地",ex:"Brownfield integration must coexist with existing systems.",cat:15},
+  {en:"rip-and-replace",zh:"完全替换",ex:"Rip-and-replace strategies carry higher risk than phased migration.",cat:15},
+  {en:"lift-and-shift",zh:"直接迁移(平移)",ex:"Lift-and-shift migration minimizes application changes.",cat:15},
+  {en:"strangler pattern",zh:"绞杀者模式",ex:"The strangler pattern incrementally replaces legacy functionality.",cat:15},
+  {en:"big bang",zh:"大爆炸式上线",ex:"Big bang cutover carries significant execution risk.",cat:15},
+  {en:"phased rollout",zh:"分阶段部署",ex:"A phased rollout reduces risk by limiting change scope.",cat:15},
+  {en:"proof of concept",zh:"概念验证",ex:"A proof of concept validates technical feasibility before full investment.",cat:15},
+  {en:"minimum viable product",zh:"最小可行产品",ex:"The MVP approach delivers value early and iterates based on feedback.",cat:15},
+  {en:"hairball",zh:"错综复杂的集成",ex:"The application hairball makes system separation extremely difficult.",cat:15},
+  {en:"spaghetti architecture",zh:"意大利面式架构",ex:"Spaghetti architecture results from years of ad-hoc integrations.",cat:15},
+  {en:"boil-the-ocean",zh:"试图一次性解决所有问题",ex:"Don't try to boil the ocean — prioritize the critical 20%.",cat:15},
+  {en:"low-hanging fruit",zh:"容易实现的目标",ex:"License consolidation is low-hanging fruit for cost synergy.",cat:15},
+];
+
+// ═══════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════
+
+let state = {
+  known: new Set(),    // indices of known words
+  unknown: new Set(),  // indices of unknown words
+  mode: "all",         // "all" | "known" | "unknown"
+  category: -1,        // -1 = all categories
+  currentIdx: 0,
+  cards: [],           // filtered word list for current session
+  sessionKnown: 0,
+  sessionUnknown: 0,
+  sessionMode: "all",
+  isFlipped: false,
+};
+
+// Load from localStorage
+function loadState() {
+  try {
+    const raw = localStorage.getItem("flashcard_state");
+    if (raw) {
+      const data = JSON.parse(raw);
+      state.known = new Set(data.known || []);
+      state.unknown = new Set(data.unknown || []);
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem("flashcard_state", JSON.stringify({
+      known: [...state.known],
+      unknown: [...state.unknown],
+    }));
+  } catch (e) { /* ignore */ }
+}
+
+// Filter words based on mode + category
+function getFilteredWords() {
+  let words = WORDS;
+
+  // Filter by category
+  if (state.category >= 0) {
+    words = words.filter(w => w.cat === state.category);
+  }
+
+  // Filter by mode
+  if (state.mode === "known") {
+    words = words.filter((_, i) => state.known.has(i));
+  } else if (state.mode === "unknown") {
+    words = words.filter((_, i) => state.unknown.has(i));
+  }
+
+  return words;
+}
+
+// Shuffle array (Fisher-Yates)
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Start a session
+function startSession(mode) {
+  state.mode = mode || state.mode;
+  state.sessionMode = state.mode;
+  state.sessionKnown = 0;
+  state.sessionUnknown = 0;
+  state.isFlipped = false;
+
+  state.cards = getFilteredWords();
+  // We need global indices for saving known/unknown state
+  // Store global indices alongside
+  const allCards = WORDS;
+  let filtered = [];
+
+  if (state.category >= 0) {
+    filtered = allCards.filter((_, i) => {
+      return WORDS[i].cat === state.category &&
+        (state.mode === "all" ||
+         (state.mode === "known" && state.known.has(i)) ||
+         (state.mode === "unknown" && state.unknown.has(i)));
+    });
+  } else {
+    filtered = allCards.filter((_, i) => {
+      return (state.mode === "all" ||
+              (state.mode === "known" && state.known.has(i)) ||
+              (state.mode === "unknown" && state.unknown.has(i)));
+    });
+  }
+
+  // Store as objects with global index
+  state.cards = filtered.map((_, i) => {
+    const globalIdx = WORDS.indexOf(filtered[i]);
+    return { word: filtered[i], globalIdx };
+  });
+
+  if (state.cards.length === 0) {
+    showEmptyState();
+    return;
+  }
+
+  shuffle(state.cards);
+  state.currentIdx = 0;
+  showCard();
+  updateUI();
+  document.getElementById("emptyState").classList.add("hidden");
+  document.getElementById("cardArea").classList.remove("hidden");
+}
+
+function showEmptyState() {
+  document.getElementById("cardArea").classList.add("hidden");
+  const empty = document.getElementById("emptyState");
+  empty.classList.remove("hidden");
+  const msg = document.getElementById("emptyMsg");
+  if (state.mode === "unknown") {
+    msg.textContent = "🎉 No unknown words! You're acing it!";
+  } else if (state.mode === "known") {
+    msg.textContent = "📭 No known words yet. Start reviewing!";
+  } else if (state.category >= 0) {
+    msg.textContent = `📭 No words in "${CATEGORIES[state.category]}" for this mode.`;
+  } else {
+    msg.textContent = "📭 No words match this filter.";
+  }
+}
+
+function showCard() {
+  if (state.currentIdx >= state.cards.length) {
+    showSessionSummary();
+    return;
+  }
+
+  state.isFlipped = false;
+  const card = state.cards[state.currentIdx];
+  const w = card.word;
+
+  document.getElementById("frontWord").textContent = w.en;
+  document.getElementById("frontExample").textContent = w.ex ? `"${w.ex}"` : "";
+  document.getElementById("backWord").textContent = w.en;
+  document.getElementById("backMeaning").textContent = w.zh;
+  document.getElementById("backExample").textContent = w.ex ? `"${w.ex}"` : "";
+  document.getElementById("backCategory").textContent = CATEGORIES[w.cat];
+
+  document.getElementById("card").classList.remove("flipped");
+  document.getElementById("cardContainer").classList.remove("flash-known", "flash-unknown");
+
+  const total = state.cards.length;
+  document.getElementById("progressText").textContent = `Card ${state.currentIdx + 1} of ${total}`;
+  updateUI();
+}
+
+function flipCard() {
+  if (!state.isFlipped) {
+    state.isFlipped = true;
+    document.getElementById("card").classList.add("flipped");
+  }
+}
+
+function markKnown() {
+  if (!state.isFlipped) {
+    flipCard();
+    // Wait a beat then mark
+    setTimeout(() => doMark("known"), 400);
+    return;
+  }
+  doMark("known");
+}
+
+function markUnknown() {
+  if (!state.isFlipped) {
+    flipCard();
+    setTimeout(() => doMark("unknown"), 400);
+    return;
+  }
+  doMark("unknown");
+}
+
+function doMark(result) {
+  const card = state.cards[state.currentIdx];
+  const globalIdx = card.globalIdx;
+
+  if (result === "known") {
+    state.known.add(globalIdx);
+    state.unknown.delete(globalIdx);
+    state.sessionKnown++;
+    document.getElementById("cardContainer").classList.add("flash-known");
+  } else {
+    state.unknown.add(globalIdx);
+    state.known.delete(globalIdx);
+    state.sessionUnknown++;
+    document.getElementById("cardContainer").classList.add("flash-unknown");
+  }
+
+  saveState();
+  state.currentIdx++;
+
+  setTimeout(() => {
+    if (state.currentIdx < state.cards.length) {
+      showCard();
+    } else {
+      showSessionSummary();
+    }
+  }, 250);
+}
+
+function skipCard() {
+  state.currentIdx++;
+  if (state.currentIdx < state.cards.length) {
+    showCard();
+  } else {
+    showSessionSummary();
+  }
+}
+
+function showSessionSummary() {
+  const known = state.sessionKnown;
+  const unknown = state.sessionUnknown;
+  const total = known + unknown;
+
+  document.getElementById("sessKnown").textContent = known;
+  document.getElementById("sessUnknown").textContent = unknown;
+  document.getElementById("sessTotal").textContent = `${total} cards reviewed`;
+
+  document.getElementById("overlay").classList.add("show");
+
+  // Update stats
+  updateUI();
+}
+
+function closeOverlay() {
+  document.getElementById("overlay").classList.remove("show");
+  startSession(state.mode);
+}
+
+function updateUI() {
+  const total = WORDS.length;
+  const known = state.known.size;
+  const unknown = state.unknown.size;
+  const pct = total ? Math.round(known / total * 100) : 0;
+
+  document.getElementById("statTotal").textContent = total;
+  document.getElementById("statKnown").textContent = known;
+  document.getElementById("statUnknown").textContent = unknown;
+  document.getElementById("statPct").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll(".controls button[data-mode]").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === mode);
+  });
+  startSession(mode);
+}
+
+function setCategory(catIdx) {
+  state.category = catIdx;
+  document.querySelectorAll(".category-bar button").forEach(b => {
+    const idx = parseInt(b.dataset.cat);
+    b.classList.toggle("active", idx === catIdx);
+  });
+  startSession(state.mode);
+}
+
+function resetProgress() {
+  if (!confirm("Reset all progress? This cannot be undone.")) return;
+  state.known.clear();
+  state.unknown.clear();
+  saveState();
+  startSession(state.mode);
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown", (e) => {
+  if (document.getElementById("overlay").classList.contains("show")) {
+    if (e.key === "Enter" || e.key === " ") { closeOverlay(); e.preventDefault(); }
+    return;
+  }
+  if (e.key === " " || e.key === "Enter") { flipCard(); e.preventDefault(); }
+  if (e.key === "k" || e.key === "K") { markKnown(); }
+  if (e.key === "u" || e.key === "U") { markUnknown(); }
+  if (e.key === "s" || e.key === "S") { skipCard(); }
+  if (e.key === "1") { setMode("all"); }
+  if (e.key === "2") { setMode("unknown"); }
+  if (e.key === "3") { setMode("known"); }
+});
+
+// Init
+loadState();
+
+// Build category buttons
+const catBar = document.getElementById("categoryBar");
+const allBtn = document.createElement("button");
+allBtn.textContent = "📂 All";
+allBtn.dataset.cat = "-1";
+allBtn.classList.add("active");
+allBtn.onclick = () => setCategory(-1);
+catBar.appendChild(allBtn);
+CATEGORIES.forEach((cat, i) => {
+  const btn = document.createElement("button");
+  btn.textContent = cat;
+  btn.dataset.cat = i;
+  btn.onclick = () => setCategory(i);
+  catBar.appendChild(btn);
+});
+
+startSession("all");
+</script>
+</body>
+</html>
