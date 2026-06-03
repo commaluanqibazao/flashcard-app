@@ -89,6 +89,24 @@
   .category-bar button:hover { background: rgba(255,255,255,0.08); }
   .category-bar button.active { background: rgba(129,140,248,0.15); border-color: #818cf8; color: #818cf8; }
 
+  /* Speak button */
+  .speak-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .speak-btn:hover { background: rgba(255,255,255,0.18); transform: scale(1.1); }
+  .speak-btn:active { transform: scale(0.9); }
+
   /* Card */
   .card-container {
     perspective: 1200px;
@@ -289,12 +307,18 @@
     <div class="card-container" id="cardContainer">
       <div class="card" id="card" onclick="flipCard()">
         <div class="card-face card-front">
-          <div class="word" id="frontWord">Ready?</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div class="word" id="frontWord" style="margin-bottom:0;">Ready?</div>
+            <button class="speak-btn" onclick="event.stopPropagation();speakWord()" title="British pronunciation">🔊</button>
+          </div>
           <div class="example" id="frontExample"></div>
           <div class="hint">👆 Tap to reveal answer</div>
         </div>
         <div class="card-face card-back">
-          <div class="word" id="backWord">word</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div class="word" id="backWord" style="margin-bottom:0;">word</div>
+            <button class="speak-btn" onclick="event.stopPropagation();speakWord()" title="British pronunciation">🔊</button>
+          </div>
           <div class="meaning" id="backMeaning">meaning</div>
           <div class="example" id="backExample"></div>
           <div class="category-tag" id="backCategory">category</div>
@@ -863,7 +887,11 @@ function showCard() {
 }
 
 function flipCard() {
-  if (!state.isFlipped) {
+  if (state.isFlipped) {
+    // Flip back
+    state.isFlipped = false;
+    document.getElementById("card").classList.remove("flipped");
+  } else {
     state.isFlipped = true;
     document.getElementById("card").classList.add("flipped");
   }
@@ -925,6 +953,24 @@ function skipCard() {
   }
 }
 
+function speakWord() {
+  if (!window.speechSynthesis) return;
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  const card = state.cards[state.currentIdx];
+  if (!card) return;
+  const w = card.word;
+  const utterance = new SpeechSynthesisUtterance(w.en);
+  utterance.lang = "en-GB";
+  utterance.rate = 0.85;
+  utterance.pitch = 0.95;
+  // Try to find a British voice
+  const voices = window.speechSynthesis.getVoices();
+  const britishVoice = voices.find(v => v.lang.startsWith("en-GB"));
+  if (britishVoice) utterance.voice = britishVoice;
+  window.speechSynthesis.speak(utterance);
+}
+
 function showSessionSummary() {
   const known = state.sessionKnown;
   const unknown = state.sessionUnknown;
@@ -959,6 +1005,9 @@ function updateUI() {
 }
 
 function setMode(mode) {
+  // Pass current unanswered card
+  state.isFlipped = false;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   state.mode = mode;
   document.querySelectorAll(".controls button[data-mode]").forEach(b => {
     b.classList.toggle("active", b.dataset.mode === mode);
@@ -967,6 +1016,9 @@ function setMode(mode) {
 }
 
 function setCategory(catIdx) {
+  // Pass current unanswered card
+  state.isFlipped = false;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   state.category = catIdx;
   document.querySelectorAll(".category-bar button").forEach(b => {
     const idx = parseInt(b.dataset.cat);
