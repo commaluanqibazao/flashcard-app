@@ -704,6 +704,7 @@ let state = {
   sessionMode: "all",
   isFlipped: false,
   sessionId: 0,
+  savedCard: {},   // {all: globalIdx, unknown: globalIdx, known: globalIdx} — unflipped card preserved across mode switches
 };
 
 // Load from localStorage
@@ -765,6 +766,17 @@ function startSession(mode) {
   }
 
   shuffle(state.cards);
+
+  // If we have a saved card for this mode, bring it to front
+  const savedIdx = state.savedCard[state.mode];
+  if (savedIdx !== undefined) {
+    const pos = state.cards.findIndex(c => c.globalIdx === savedIdx);
+    if (pos > 0) {
+      const [item] = state.cards.splice(pos, 1);
+      state.cards.unshift(item);
+    }
+  }
+
   state.currentIdx = 0;
   showCard();
   updateUI();
@@ -821,6 +833,8 @@ function flipCard() {
     // Flip to answer side — auto-pronounce!
     state.isFlipped = true;
     document.getElementById("card").classList.add("flipped");
+    // Card was interacted with — clear saved for this mode so it moves on
+    delete state.savedCard[state.mode];
     setTimeout(() => speakWord(), 400);
     // Execute any pending mark from one-tap flow
     if (state.pendingMark) {
@@ -944,7 +958,15 @@ function updateUI() {
 }
 
 function setMode(mode) {
-  // Pass current unanswered card
+  // Save current unflipped card before switching away
+  if (state.cards.length > 0 && state.currentIdx < state.cards.length) {
+    if (!state.isFlipped) {
+      state.savedCard[state.mode] = state.cards[state.currentIdx].globalIdx;
+    } else {
+      // Card was flipped/interacted — clear saved for this mode
+      delete state.savedCard[state.mode];
+    }
+  }
   state.isFlipped = false;
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   state.mode = mode;
