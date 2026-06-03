@@ -888,12 +888,16 @@ function showCard() {
 
 function flipCard() {
   if (state.isFlipped) {
-    // Flip back
+    // Flip back to front
     state.isFlipped = false;
     document.getElementById("card").classList.remove("flipped");
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
   } else {
+    // Flip to answer side — auto-pronounce!
     state.isFlipped = true;
     document.getElementById("card").classList.add("flipped");
+    // Auto-pronounce with slight delay so animation plays first
+    setTimeout(() => speakWord(), 400);
   }
 }
 
