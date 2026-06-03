@@ -703,6 +703,7 @@ let state = {
   sessionUnknown: 0,
   sessionMode: "all",
   isFlipped: false,
+  sessionId: 0,
 };
 
 // Load from localStorage
@@ -742,6 +743,7 @@ function startSession(mode) {
   state.sessionKnown = 0;
   state.sessionUnknown = 0;
   state.isFlipped = false;
+  state.sessionId++; // invalidate any pending delayed marks
 
   // Filter words by mode and build card list
   const allCards = WORDS;
@@ -819,32 +821,40 @@ function flipCard() {
     // Flip to answer side — auto-pronounce!
     state.isFlipped = true;
     document.getElementById("card").classList.add("flipped");
-    // Auto-pronounce with slight delay so animation plays first
     setTimeout(() => speakWord(), 400);
+    // Execute any pending mark from one-tap flow
+    if (state.pendingMark) {
+      const pm = state.pendingMark;
+      state.pendingMark = null;
+      setTimeout(() => doMark(pm), 500);
+    }
   }
 }
 
 function markKnown() {
   if (!state.isFlipped) {
     flipCard();
-    // Wait a beat then mark
-    setTimeout(() => doMark("known"), 400);
+    state.pendingMark = "known";
     return;
   }
+  state.pendingMark = null;
   doMark("known");
 }
 
 function markUnknown() {
   if (!state.isFlipped) {
     flipCard();
-    setTimeout(() => doMark("unknown"), 400);
+    state.pendingMark = "unknown";
     return;
   }
+  state.pendingMark = null;
   doMark("unknown");
 }
 
 function doMark(result) {
+  const mySessionId = state.sessionId;
   const card = state.cards[state.currentIdx];
+  if (!card) return;
   const globalIdx = card.globalIdx;
 
   if (result === "known") {
@@ -863,6 +873,8 @@ function doMark(result) {
   state.currentIdx++;
 
   setTimeout(() => {
+    // Only advance if still in the same session
+    if (state.sessionId !== mySessionId) return;
     if (state.currentIdx < state.cards.length) {
       showCard();
     } else {
