@@ -69,25 +69,7 @@
   .controls button.active { background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #38bdf8; }
 
   /* Category filter */
-  .category-bar {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-  .category-bar button {
-    padding: 4px 10px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.03);
-    color: #94a3b8;
-    font-size: 0.7rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-  .category-bar button:hover { background: rgba(255,255,255,0.08); }
-  .category-bar button.active { background: rgba(129,140,248,0.15); border-color: #818cf8; color: #818cf8; }
+
 
   /* Speak button */
   .speak-btn {
@@ -174,13 +156,7 @@
     max-width: 90%;
     margin-bottom: 8px;
   }
-  .card-back .category-tag {
-    font-size: 0.7rem;
-    color: #64748b;
-    background: rgba(255,255,255,0.05);
-    padding: 3px 10px;
-    border-radius: 10px;
-  }
+
 
   /* Action buttons */
   .actions {
@@ -299,7 +275,7 @@
   </div>
 
   <!-- Category filter -->
-  <div class="category-bar" id="categoryBar"></div>
+
 
   <!-- Card area -->
   <div id="cardArea">
@@ -321,7 +297,7 @@
           </div>
           <div class="meaning" id="backMeaning">meaning</div>
           <div class="example" id="backExample"></div>
-          <div class="category-tag" id="backCategory">category</div>
+
         </div>
       </div>
     </div>
@@ -357,25 +333,6 @@
 // ═══════════════════════════════════════════════
 // WORD DATA — 320 ITDD & IT Integration terms
 // ═══════════════════════════════════════════════
-
-const CATEGORIES = [
-  "IT Due Diligence Core",
-  "IT Integration Strategy",
-  "M&A Lifecycle & Process",
-  "Enterprise Architecture & Systems",
-  "Cloud Computing",
-  "Data Management",
-  "Security & Compliance",
-  "Networking & Infrastructure",
-  "Software & Systems Engineering",
-  "DevOps & CI/CD",
-  "Cybersecurity & Risk",
-  "Regulatory & Legal",
-  "IT Operations & Service Management",
-  "Strategy & Management Consulting",
-  "Financial & Commercial IT Terms",
-  "Advanced & Specialized",
-];
 
 const WORDS = [
   //── IT Due Diligence Core ──
@@ -739,7 +696,7 @@ let state = {
   known: new Set(),    // indices of known words
   unknown: new Set(),  // indices of unknown words
   mode: "all",         // "all" | "known" | "unknown"
-  category: -1,        // -1 = all categories
+
   currentIdx: 0,
   cards: [],           // filtered word list for current session
   sessionKnown: 0,
@@ -769,25 +726,6 @@ function saveState() {
   } catch (e) { /* ignore */ }
 }
 
-// Filter words based on mode + category
-function getFilteredWords() {
-  let words = WORDS;
-
-  // Filter by category
-  if (state.category >= 0) {
-    words = words.filter(w => w.cat === state.category);
-  }
-
-  // Filter by mode
-  if (state.mode === "known") {
-    words = words.filter((_, i) => state.known.has(i));
-  } else if (state.mode === "unknown") {
-    words = words.filter((_, i) => state.unknown.has(i));
-  }
-
-  return words;
-}
-
 // Shuffle array (Fisher-Yates)
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -805,26 +743,13 @@ function startSession(mode) {
   state.sessionUnknown = 0;
   state.isFlipped = false;
 
-  state.cards = getFilteredWords();
-  // We need global indices for saving known/unknown state
-  // Store global indices alongside
+  // Filter words by mode and build card list
   const allCards = WORDS;
-  let filtered = [];
-
-  if (state.category >= 0) {
-    filtered = allCards.filter((_, i) => {
-      return WORDS[i].cat === state.category &&
-        (state.mode === "all" ||
-         (state.mode === "known" && state.known.has(i)) ||
-         (state.mode === "unknown" && state.unknown.has(i)));
-    });
-  } else {
-    filtered = allCards.filter((_, i) => {
-      return (state.mode === "all" ||
-              (state.mode === "known" && state.known.has(i)) ||
-              (state.mode === "unknown" && state.unknown.has(i)));
-    });
-  }
+  let filtered = allCards.filter((_, i) => {
+    return (state.mode === "all" ||
+            (state.mode === "known" && state.known.has(i)) ||
+            (state.mode === "unknown" && state.unknown.has(i)));
+  });
 
   // Store as objects with global index
   state.cards = filtered.map((_, i) => {
@@ -854,8 +779,6 @@ function showEmptyState() {
     msg.textContent = "🎉 No unknown words! You're acing it!";
   } else if (state.mode === "known") {
     msg.textContent = "📭 No known words yet. Start reviewing!";
-  } else if (state.category >= 0) {
-    msg.textContent = `📭 No words in "${CATEGORIES[state.category]}" for this mode.`;
   } else {
     msg.textContent = "📭 No words match this filter.";
   }
@@ -876,7 +799,7 @@ function showCard() {
   document.getElementById("backWord").textContent = w.en;
   document.getElementById("backMeaning").textContent = w.zh;
   document.getElementById("backExample").textContent = w.ex ? `"${w.ex}"` : "";
-  document.getElementById("backCategory").textContent = CATEGORIES[w.cat];
+
 
   document.getElementById("card").classList.remove("flipped");
   document.getElementById("cardContainer").classList.remove("flash-known", "flash-unknown");
@@ -1019,18 +942,6 @@ function setMode(mode) {
   startSession(mode);
 }
 
-function setCategory(catIdx) {
-  // Pass current unanswered card
-  state.isFlipped = false;
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
-  state.category = catIdx;
-  document.querySelectorAll(".category-bar button").forEach(b => {
-    const idx = parseInt(b.dataset.cat);
-    b.classList.toggle("active", idx === catIdx);
-  });
-  startSession(state.mode);
-}
-
 function resetProgress() {
   if (!confirm("Reset all progress? This cannot be undone.")) return;
   state.known.clear();
@@ -1056,22 +967,6 @@ document.addEventListener("keydown", (e) => {
 
 // Init
 loadState();
-
-// Build category buttons
-const catBar = document.getElementById("categoryBar");
-const allBtn = document.createElement("button");
-allBtn.textContent = "📂 All";
-allBtn.dataset.cat = "-1";
-allBtn.classList.add("active");
-allBtn.onclick = () => setCategory(-1);
-catBar.appendChild(allBtn);
-CATEGORIES.forEach((cat, i) => {
-  const btn = document.createElement("button");
-  btn.textContent = cat;
-  btn.dataset.cat = i;
-  btn.onclick = () => setCategory(i);
-  catBar.appendChild(btn);
-});
 
 startSession("all");
 </script>
