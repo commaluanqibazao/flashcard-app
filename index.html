@@ -833,35 +833,19 @@ function flipCard() {
     // Flip to answer side — auto-pronounce!
     state.isFlipped = true;
     document.getElementById("card").classList.add("flipped");
-    // Card was interacted with — clear saved for this mode so it moves on
     delete state.savedCard[state.mode];
     setTimeout(() => speakWord(), 400);
-    // Execute any pending mark from one-tap flow
-    if (state.pendingMark) {
-      const pm = state.pendingMark;
-      state.pendingMark = null;
-      setTimeout(() => doMark(pm), 500);
-    }
   }
 }
 
 function markKnown() {
-  if (!state.isFlipped) {
-    state.pendingMark = "known";
-    flipCard();
-    return;
-  }
-  state.pendingMark = null;
+  delete state.savedCard[state.mode];
   doMark("known");
 }
 
 function markUnknown() {
-  if (!state.isFlipped) {
-    state.pendingMark = "unknown";
-    flipCard();
-    return;
-  }
-  state.pendingMark = null;
+  // Directly mark as unknown — no flip, no pronunciation, just move on
+  delete state.savedCard[state.mode];
   doMark("unknown");
 }
 
